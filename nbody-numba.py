@@ -71,16 +71,19 @@ def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
         for j in range(pairs.shape[0]):
             b1 = pairs[j][0]
             b2 = pairs[j][1]
-            x1, y1, z1 = bodies[b1][:3]
-            x2, y2, z2 = bodies[b2][:3]
-            v1 = bodies[b1][3:6]
-            v2 = bodies[b2][3:6]
+            x1 = bodies[b1, 0]
+            y1 = bodies[b1, 1]
+            z1 = bodies[b1, 2]
+            x2 = bodies[b2, 0]
+            y2 = bodies[b2, 1]
+            z2 = bodies[b2, 2]
             m1 = bodies[b1][6]
             m2 = bodies[b2][6]
             dx = x1 - x2
             dy = y1 - y2
             dz = z1 - z2
-            mag = dt * ((dx * dx + dy * dy + dz * dz) ** (-1.5))
+            sqdist = dx * dx + dy * dy + dz * dz
+            mag = dt / (sqdist * np.sqrt(sqdist))
             b1m = m1 * mag
             b2m = m2 * mag
             bodies[b1, 3] -= dx * b2m  # v1x
@@ -90,8 +93,9 @@ def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
             bodies[b2, 4] += dy * b1m  # v2y
             bodies[b2, 5] += dz * b1m  # v2z
         for j in range(bodies.shape[0]):
-            r = bodies[j][:3]
-            vx, vy, vz = bodies[j][3:6]
+            vx = bodies[j, 3]
+            vy = bodies[j, 4]
+            vz = bodies[j, 5]
             bodies[j, 0] += dt * vx  # rx
             bodies[j, 1] += dt * vy  # ry
             bodies[j, 2] += dt * vz  # rz
