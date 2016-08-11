@@ -28,7 +28,7 @@ INDICES = dict(zip(BODIES, range(len(BODIES))))
 # An array describing the system.
 # First three columns [0:3] are positions in space.
 # Next three columns [3:6] are velocity.
-# Final columns [6] is the mass.
+# Final column [6] is the mass.
 SYSTEM = np.array([
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, SOLAR_MASS],
     [4.84143144246472090e+00,
@@ -58,18 +58,25 @@ SYSTEM = np.array([
                 2.68067772490389322e-03 * DAYS_PER_YEAR,
                 1.62824170038242295e-03 * DAYS_PER_YEAR,
                 -9.51592254519715870e-05 * DAYS_PER_YEAR,
-                5.15138902046611451e-05 * SOLAR_MASS]]
+                5.15138902046611451e-05 * SOLAR_MASS]])
 
 
 PAIRS = np.array(combinations(range(len(BODIES))))
 
 
-@nb.jit(nopython=True)
+#@numba.jit(nopython=True)
 def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
 
     for i in range(n):
-        for (([x1, y1, z1], v1, m1),
-             ([x2, y2, z2], v2, m2)) in pairs:
+        for j in range(pairs.shape[0]):
+            b1 = pairs[j][0]
+            b2 = pairs[j][1]
+            x1, y1, z1 = bodies[b1][:3]
+            x2, y2, z2 = bodies[b2][:3]
+            v1 = bodies[b1][3:6]
+            v2 = bodies[b2][3:6]
+            m1 = bodies[b1][6]
+            m2 = bodies[b2][6]
             dx = x1 - x2
             dy = y1 - y2
             dz = z1 - z2
@@ -82,7 +89,9 @@ def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
             v2[0] += dx * b1m
             v2[1] += dy * b1m
             v2[2] += dz * b1m
-        for (r, [vx, vy, vz], m) in bodies:
+        for j in range(bodies.shape[0]):
+            r = bodies[j][:3]
+            vx, vy, vz = bodies[j][3:6]
             r[0] += dt * vx
             r[1] += dt * vy
             r[2] += dt * vz
@@ -90,31 +99,33 @@ def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
 
 def report_energy(bodies=SYSTEM, pairs=PAIRS, e=0.0):
 
-    for (((x1, y1, z1), v1, m1),
-         ((x2, y2, z2), v2, m2)) in pairs:
+    for i, j in pairs:
+        x1, y1, z1, *v, m1 = bodies[i]
+        x2, y2, z2, *v, m2 = bodies[j]
         dx = x1 - x2
         dy = y1 - y2
         dz = z1 - z2
         e -= (m1 * m2) / ((dx * dx + dy * dy + dz * dz) ** 0.5)
-    for (r, [vx, vy, vz], m) in bodies:
+    for (rx, ry, rz, vx, vy, vz, m) in bodies:
         e += m * (vx * vx + vy * vy + vz * vz) / 2.
     print("%.9f" % e)
 
 
 def offset_momentum(ref, bodies=SYSTEM, px=0.0, py=0.0, pz=0.0):
 
-    for (r, [vx, vy, vz], m) in bodies:
+    for (rx, ry, rz, vx, vy, vz, m) in bodies:
         px -= vx * m
         py -= vy * m
         pz -= vz * m
-    (r, v, m) = ref
+    (r, v, m) = ref[:3], ref[3:6], ref[6]
     v[0] = px / m
     v[1] = py / m
     v[2] = pz / m
 
 
 def main(n, ref='sun'):
-    offset_momentum(BODIES[ref])
+    ref = BODIES.index(ref)
+    offset_momentum(SYSTEM[ref])
     report_energy()
     advance(0.01, n)
     report_energy()
