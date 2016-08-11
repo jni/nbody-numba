@@ -127,7 +127,7 @@ def main(n, ref='sun'):
     ref = BODIES.index(ref)
     offset_momentum(SYSTEM[ref])
     report_energy()
-    advance(0.01, n)
+    advance(0.01, n, SYSTEM)
     report_energy()
 
 if __name__ == '__main__':
