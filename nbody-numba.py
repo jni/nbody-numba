@@ -64,7 +64,7 @@ SYSTEM = np.array([
 PAIRS = np.array(combinations(range(len(BODIES))))
 
 
-#@numba.jit(nopython=True)
+@numba.jit(nopython=True)
 def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
 
     for i in range(n):
@@ -83,18 +83,18 @@ def advance(dt, n, bodies=SYSTEM, pairs=PAIRS):
             mag = dt * ((dx * dx + dy * dy + dz * dz) ** (-1.5))
             b1m = m1 * mag
             b2m = m2 * mag
-            v1[0] -= dx * b2m
-            v1[1] -= dy * b2m
-            v1[2] -= dz * b2m
-            v2[0] += dx * b1m
-            v2[1] += dy * b1m
-            v2[2] += dz * b1m
+            bodies[b1, 3] -= dx * b2m  # v1x
+            bodies[b1, 4] -= dy * b2m  # v1y
+            bodies[b1, 5] -= dz * b2m  # v1z
+            bodies[b2, 3] += dx * b1m  # v2x
+            bodies[b2, 4] += dy * b1m  # v2y
+            bodies[b2, 5] += dz * b1m  # v2z
         for j in range(bodies.shape[0]):
             r = bodies[j][:3]
             vx, vy, vz = bodies[j][3:6]
-            r[0] += dt * vx
-            r[1] += dt * vy
-            r[2] += dt * vz
+            bodies[j, 0] += dt * vx  # rx
+            bodies[j, 1] += dt * vy  # ry
+            bodies[j, 2] += dt * vz  # rz
 
 
 def report_energy(bodies=SYSTEM, pairs=PAIRS, e=0.0):
